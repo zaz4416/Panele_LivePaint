@@ -43,27 +43,28 @@ function CLivePaintDLg( DlgName ) {
     $.writeln( "コンストラクタ_CLivePaintDLg" );
 
     // 初期化
-    const TheObj = this;
-    CPaletteWindow.call( TheObj );          // コンストラクタ
-    TheObj.InitDialog( DlgName );           // イニシャライザ
-    const TheDialog = TheObj.GetDlg();      // ダイアログへのオブジェクトを得る
-
-    var ObjPanel   = TheObj.AddPanel();
+    CLivePaintDLg.TheObj = this;
+    CPaletteWindow.call( this );          // コンストラクタ
+    this.InitDialog( DlgName );           // イニシャライザ
+    const TheDialog = this.GetDlg();      // ダイアログへのオブジェクトを得る
+    var ObjPanel   = this.AddPanel();
 
     // ダイアログにボタン追加
     m_BtnStartLivePint = ObjPanel.add( "button");
     m_BtnStartLivePint.text = "ライブペイント開始";
     m_BtnStartLivePint.onClick = function() {
+        var  Obj = CLivePaintDLg.TheObj;
+
         try {
             if ( typeof StaticActiveDoc  === "undefined" ) {
-                TheObj.CallFunc( "BeginLivePaint_Func" );
+                Obj.CallFunc( "BeginLivePaint_Func" );
             }
             else {
-                TheObj.CallFunc( "EndOfLivePaint_Func" );
+                Obj.CallFunc( "EndOfLivePaint_Func" );
             }
         }
         catch(e) {
-                alert( e.message );
+            alert( e.message );
         } 
     }
  
@@ -73,15 +74,14 @@ function CLivePaintDLg( DlgName ) {
     m_SelectedGrText.readonly = true;   // 編集を禁止
 
 
-
-    objRb01 = TheObj.AddRadioButton("スポイト");
+    objRb01 = this.AddRadioButton("スポイト");
     objRb01.visible = false;
     objRb01.onClick = function() {
         app.selectTool('Adobe Eyedropper Tool');        // スポイト
     };
 
 
-    objRb02 = TheObj.AddRadioButton("ライブペイント");
+    objRb02 = this.AddRadioButton("ライブペイント");
     objRb02.visible = false;
     objRb02.onClick = function() {
         app.selectTool('Adobe Planar Paintbucket Tool');    // ライブペイント
@@ -89,16 +89,17 @@ function CLivePaintDLg( DlgName ) {
 
 
     // ダイアログにボタン追加
-    m_BtnCancel = TheObj.AddButton( "閉じる" );
+    m_BtnCancel = this.AddButton( "閉じる" );
     m_BtnCancel.onClick = function () {
+        var  Obj = CLivePaintDLg.TheObj;
         try
         {
             if ( typeof StaticActiveDoc  !== "undefined" )
             {
                 alert("ライプペイントを継続中です\nパスに変換して終了します。");
-                TheObj.CallFunc( "EndOfLivePaint_Func" );
+                Obj.CallFunc( "EndOfLivePaint_Func" );
             }
-            TheObj.CloseDlg();
+            Obj.CloseDlg();
         }
         catch(e)
         {
@@ -107,7 +108,9 @@ function CLivePaintDLg( DlgName ) {
     }
 }
 
-CLivePaintDLg.prototype = CPaletteWindow.prototype; // サブクラスのメソッド追加よりも先に、継承させること
+// クラス継承
+ClassInheritance(CLivePaintDLg, CPaletteWindow);
+
 
 // メソッド
 // ・継承した後に、サブクラスのメソッド を個別に追加すること
@@ -129,9 +132,10 @@ CLivePaintDLg.prototype.IsLivePaintig =  function(Obj) {
 
 
 
-CLivePaintDLg.prototype.BeginLivePaint_Func = function()
+CLivePaintDLg.BeginLivePaint_Func = function()
 { 
-    var  ProgressDlg = new Window ('palette', "処理中...", [0,0,300,60],{borderless:true});    
+    var  ProgressDlg = new Window ('palette', "処理中...", [0,0,300,60],{borderless:true});
+    var  Obj = CLivePaintDLg.TheObj;
  
     try
     { 
@@ -153,7 +157,7 @@ CLivePaintDLg.prototype.BeginLivePaint_Func = function()
 
          if ( SrcGr == undefined ) throw new Error("指示\nパスを含むグループを1づだけ選択してね");
 
-        this.SetSelectedText( SrcGr.name );
+        Obj.SetSelectedText( SrcGr.name );
         StaticGrName = SrcGr.name;
   
         // グループ化されていないパス、または、複合パスが含まれている場合、グループを追加してその中に全てのアイテムを移動させる
@@ -210,7 +214,7 @@ CLivePaintDLg.prototype.BeginLivePaint_Func = function()
 }
 
 
-CLivePaintDLg.prototype.EndOfLivePaint_Func = function()
+CLivePaintDLg.EndOfLivePaint_Func = function()
 {  
     var ActiveLayer = activeDocument.activeLayer;         
 	var  ProgressDlg = new Window ('palette', "処理中...", [0,0,300,60],{borderless:true});
@@ -381,7 +385,8 @@ CLivePaintDLg.prototype.EndOfLivePaint_Func = function()
             }
         }
 
-        this.SetSelectedText(" ");
+        var  Obj = CLivePaintDLg.TheObj;
+        Obj.SetSelectedText(" ");
         app.selectTool('Adobe Direct Select Tool');     // ダイレクト選択
         m_BtnStartLivePint.text = "ライブペイント開始";
         app.activeDocument.selection = [];

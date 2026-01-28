@@ -4,7 +4,7 @@
 </javascriptresource>
 */
 
-// Ver.1.0 : 2026/01/27
+// Ver.1.0 : 2026/01/28
 
 #target illustrator
 #targetengine "main"
@@ -23,8 +23,27 @@ var LangStrings = {
     GUI_JSX: {
         en : "ScriptUI Dialog Builder - Export_EN.jsx",
         ja : "ScriptUI Dialog Builder - Export_JP.jsx"
+    },
+
+    Msg_start_live_paint: {
+        en : "Start live paint",
+        ja : "ライブペイント開始"
+    },
+
+    Msg_end_of_live_paint: {
+        en : "End of live paint",
+        ja : "ライブペイントを終了しました"
     }
 };
+
+// --- LangStringsの辞書から自動翻訳処理 ---
+for (var key in LangStrings) {
+    if (LangStrings.hasOwnProperty(key)) {
+        // 各要素をlocalize関数に通して文字列に置き換える
+        LangStrings[key] = localize(LangStrings[key]);
+    }
+}
+
 
 var DlgPaint;
 var StaticFlagValue = false;
@@ -351,11 +370,11 @@ CLivePaintDLg.EndOfLivePaint_Func = function()
 
         self.SetSelectedText(" ");
         app.selectTool('Adobe Direct Select Tool');     // ダイレクト選択
-        self.m_BtnStartLivePint.text = "ライブペイント開始";
+        self.m_BtnStartLivePint.text = LangStrings.Msg_start_live_paint;
         app.activeDocument.selection = [];
         StaticActiveDoc  = undefined;
         StaticGrName = "";
-        alert("ライブペイントを終了しました");
+        alert( LangStrings.Msg_end_of_live_paint) ;
     } // try
     catch(e)
     {
@@ -435,7 +454,7 @@ function MoveItems( SrcGrX, DisGrX )
     {
           // 送り元がパスなので、その中のひとつをグループ化して移動させる
           SrcGrX.move(DisGrX,ElementPlacement.PLACEATEND);    
-     }
+    }
  }
 
  function Pathfinder_Add()
@@ -446,26 +465,26 @@ function MoveItems( SrcGrX, DisGrX )
     app.executeMenuCommand("expandStyle");
     //app.executeMenuCommand("ungroup");
  
-    // Add         Live Pathfinder Add		追加
+    // Add         Live Pathfinder Add		    追加
     // Subtract    Live Pathfinder Subtract		前面オブジェクトで型抜き
     // Intersect   Live Pathfinder Intersect	交差
     // Exclude     Live Pathfinder Exclude		中マド
 
     // Divide      Live Pathfinder Divide		分割
-    // Trim        Live Pathfinder Trim		刈り込み
+    // Trim        Live Pathfinder Trim		    刈り込み
     // Merge       Live Pathfinder Merge		合流
-    // Crop        Live Pathfinder Crop		切り抜き
+    // Crop        Live Pathfinder Crop		    切り抜き
     // Outline     Live Pathfinder Outline		アウトライ
     // Minus Back  Live Pathfinder Minus Back	背面オブジェクトで型抜き
 
     // Hard Mix    Live Pathfinder Hard Mix		濃い混色
     // Soft Mix    Live Pathfinder Soft Mix		薄い混色
-    // Trap        Live Pathfinder Trap		トラップ
+    // Trap        Live Pathfinder Trap		    トラップ
  }
  
 
  function escExit(event) {
-    if(event.keyName === 'Escape'){
+    if ( event.keyName === 'Escape' ) {
         alert( "終わります。" );
         DlgPaint.IsLivePaintig();
         DlgPaint.CloseDlg();
@@ -491,5 +510,5 @@ function main()
     {
          var msg = {en : 'This script requires Illustrator 2020 or later.', ja : 'このスクリプトは Illustrator 2020以降に対応しています。'} ;
         alert(msg) ; 
-     }
+    }
 }

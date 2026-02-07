@@ -4,27 +4,21 @@
 </javascriptresource>
 */
 
-// Ver.1.0 : 2026/02/04
+// Ver.1.0 : 2026/02/07
 
 #target illustrator
 #targetengine "main"
 
 
-var SELF_FILE = (function() {
-try { var path = $.fileName || Folder.current.fullName; return new File(decodeURI(path)); } catch (e) { return null; }
-})();
-var SCRIPT_DIR = (SELF_FILE !== null) ? SELF_FILE.parent : Folder.current;
-
-
-// 外部のJSXを読み込む
-$.evalFile(SCRIPT_DIR + "/ZazLib/" + "PaletteWindow.jsx");
-$.evalFile(SCRIPT_DIR + "/ZazLib/" + "SupprtFuncLib.jsx");
+// 外部のスクリプトを埋め込む
+#include "ZazLib/PaletteWindow.jsx"
+#include "ZazLib/SupprtFuncLib.jsx"
 
 // 言語ごとの辞書を定義
 var MyDictionary = {
     GUI_JSX: {
-        en : "ScriptUI Dialog Builder - Export_EN.jsx",
-        ja : "ScriptUI Dialog Builder - Export_JP.jsx"
+        en : "GUI/Panele_LivePaint/ScriptUI Dialog Builder - Export_EN.jsx",
+        ja : "GUI/Panele_LivePaint/ScriptUI Dialog Builder - Export_JP.jsx"
     },
 
     Msg_start_live_paint: {
@@ -40,6 +34,31 @@ var MyDictionary = {
 
 // --- LangStringsの辞書から自動翻訳処理 ---
 var LangStrings = GetWordsFromDictionary( MyDictionary );
+
+// オブジェクトの最大保持数
+var _MAX_INSTANCES = 5;
+
+
+// --- グローバル関数 -----------------------------------------------------------------
+
+/**
+ * 実行中スクリプトの親フォルダ（Folderオブジェクト）を返す。
+ * なお、戻り値の最後には/が付与される。
+ */
+function GetScriptDir() {
+    var selfFile = null;
+    try {
+        selfFile = new File(decodeURI($.fileName || Folder.current.fullName));
+    } catch (e) {
+        return Folder.current.fullName.replace(/\/*$/, "/");
+    }
+    var dirPath = (selfFile !== null) ? selfFile.parent.fullName : Folder.current.fullName;
+
+    // 末尾にスラッシュがなければ付与して返す
+    return dirPath.replace(/\/*$/, "/");
+}
+
+// ---------------------------------------------------------------------------------
 
 
 var DlgPaint;
@@ -61,15 +80,13 @@ alert( "お知らせ\n" + cMaxColorLivePainr + "まで、色を扱えます" );
 // コンストラクタ    
 function CLivePaintDLg()
 {
-    CPaletteWindow.call( this );       // コンストラクタ
+    CPaletteWindow.call( this, _MAX_INSTANCES, false );      // コンストラクタ
     var self = this;
     
     self.m_Dialog.opacity       = 0.7; // （不透明度）
 
     // GUI用のスクリプトを読み込む
-    var selfFile = new File($.fileName);
-    var currentDir = selfFile.parent;
-    if ( self.LoadGUIfromJSX( currentDir.fullName + "/GUI/Panele_LivePaint/" + LangStrings.GUI_JSX ) )
+    if ( self.LoadGUIfromJSX( GetScriptDir() + LangStrings.GUI_JSX ) )
     {
         // GUIに変更を入れる
         self.m_BtnStartLivePint.onClick  = function() { self.onStartLivePintClick(); }
@@ -79,6 +96,9 @@ function CLivePaintDLg()
 
         self.m_BtnColorPicker.visible = false;
         self.m_BtnLivePaint.visible = false;
+
+        // 最後に、新しいインスタンスを追加
+        self.RegisterInstance();
     }
     else{
         alert("GUIが未定です");
@@ -105,7 +125,7 @@ CLivePaintDLg.prototype.IsLivePaintig =  function() {
     if ( typeof StaticActiveDoc  !== "undefined" )
     {
         alert("ライプペイントを継続中です\nパスに変換して終了します。");
-        this.CallFunc( "EndOfLivePaint_Func" );
+        this.CallFunc( ".EndOfLivePaint_Func()" );
     }
 }
 
@@ -393,10 +413,10 @@ CLivePaintDLg.prototype.onStartLivePintClick = function() {
     var  self = CLivePaintDLg.self;
     try {
         if ( typeof StaticActiveDoc  === "undefined" ) {
-            self.CallFunc( "BeginLivePaint_Func" );
+            self.CallFunc( ".BeginLivePaint_Func()" );
         }
         else {
-            self.CallFunc( "EndOfLivePaint_Func" );
+            self.CallFunc( ".EndOfLivePaint_Func()" );
         }
     }
     catch(e) {
@@ -419,9 +439,9 @@ CLivePaintDLg.prototype.onCancelClick = function() {
         if ( typeof StaticActiveDoc  !== "undefined" )
         {
             alert("ライプペイントを継続中です\nパスに変換して終了します。");
-            self.CallFunc( "EndOfLivePaint_Func" );
+            self.CallFunc( ".EndOfLivePaint_Func()" );
         }
-        self.CloseDlg();
+        self.close();
     }
     catch(e)
     {
@@ -484,7 +504,7 @@ function MoveItems( SrcGrX, DisGrX )
     if ( event.keyName === 'Escape' ) {
         alert( "終わります。" );
         DlgPaint.IsLivePaintig();
-        DlgPaint.CloseDlg();
+        DlgPaint.close();
     }
  }
 
@@ -493,15 +513,17 @@ main();
 
 function main()
 { 
-    $.writeln( "main()" );
-    
-    DlgPaint = new CLivePaintDLg();  //インスタンスを生成
-    //DlgPaint.addEventListener( 'keydown',  escExit );
+
     
     // バージョン・チェック
     if( appVersion()[0]  >= 24)
     {
-        DlgPaint.ShowDlg(); 
+        // 新しいインスタンスを生成
+        var Obj  = new CLivePaintDLg() ;
+        //Obj.addEventListener( 'keydown',  escExit );
+
+        // インスタンスを表示
+        Obj.show();
     }
     else
     {
